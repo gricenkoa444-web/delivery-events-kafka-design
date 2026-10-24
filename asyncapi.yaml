@@ -1,0 +1,84 @@
+asyncapi: 2.6.0
+info:
+  title: Delivery Events
+  version: 1.0.0
+  description: События жизненного цикла приёмки маркированной поставки.
+
+servers:
+  production:
+    url: kafka.example.com:9092
+    protocol: kafka
+    description: Кластер Kafka (условный адрес)
+
+channels:
+  delivery.accepted:
+    description: >
+      Факт приёмки поставки. Публикуется после успешной приёмки.
+      Ключ сообщения: deliveryId (порядок событий одной поставки).
+    bindings:
+      kafka:
+        partitions: 6
+        replicas: 3
+        topicConfiguration:
+          retention.ms: 604800000
+    subscribe:
+      operationId: onDeliveryAccepted
+      summary: Получить событие о принятой поставке
+      message:
+        $ref: '#/components/messages/DeliveryAccepted'
+
+  delivery.accepted.dlq:
+    description: События, которые потребитель не смог обработать (с причиной ошибки в заголовках).
+    subscribe:
+      operationId: onDeliveryAcceptedDeadLetter
+      message:
+        $ref: '#/components/messages/DeliveryAccepted'
+
+components:
+  messages:
+    DeliveryAccepted:
+      name: DeliveryAccepted
+      title: Поставка принята
+      contentType: application/json
+      bindings:
+        kafka:
+          key:
+            type: string
+            format: uuid
+            description: deliveryId
+      payload:
+        $ref: '#/components/schemas/DeliveryAcceptedPayload'
+
+  schemas:
+    DeliveryAcceptedPayload:
+      type: object
+      required: [eventId, eventType, eventVersion, occurredAt, deliveryId, items]
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum: [DeliveryAccepted]
+        eventVersion:
+          type: integer
+          minimum: 1
+        occurredAt:
+          type: string
+          format: date-time
+        deliveryId:
+          type: string
+          format: uuid
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [gtin, quantity]
+            properties:
+              gtin:
+                type: string
+                pattern: '^[0-9]{14}$'
+              quantity:
+                type: integer
+                minimum: 1

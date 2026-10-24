@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/delivery-accepted.v1.json",
+  "title": "DeliveryAccepted v1",
+  "description": "Событие: поставка принята. Ключ сообщения: deliveryId.",
+  "type": "object",
+  "required": ["eventId", "eventType", "eventVersion", "occurredAt", "deliveryId", "items"],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Уникальный идентификатор события, основа идемпотентности потребителей."
+    },
+    "eventType": { "const": "DeliveryAccepted" },
+    "eventVersion": { "type": "integer", "minimum": 1 },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Момент приёмки (UTC)."
+    },
+    "deliveryId": { "type": "string", "format": "uuid" },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["gtin", "quantity"],
+        "properties": {
+          "gtin": { "type": "string", "pattern": "^[0-9]{14}$" },
+          "quantity": { "type": "integer", "minimum": 1 }
+        }
+      }
+    }
+  }
+}
